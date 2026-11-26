@@ -7,6 +7,8 @@ export type Category =
   | 'Entertainment'
   | 'Other'
 
+export type CategoryFilter = 'All' | Category
+
 export interface Transaction {
   id: string
   title: string
@@ -117,6 +119,8 @@ function createTransactionId(): string {
 export function useBudget() {
   const [budgetLimit, setBudgetLimit] = useState(readBudgetLimit)
   const [transactions, setTransactions] = useState<Transaction[]>(readTransactions)
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All')
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     writeStoredValue(BUDGET_STORAGE_KEY, JSON.stringify(budgetLimit))
@@ -131,6 +135,28 @@ export function useBudget() {
     0,
   )
   const remaining = budgetLimit - totalSpent
+  const filteredTransactions = transactions.filter((transaction) => {
+    const matchesCategory =
+      selectedCategory === 'All' || transaction.category === selectedCategory
+    const matchesSearch = transaction.title
+      .toLocaleLowerCase()
+      .includes(searchQuery.trim().toLocaleLowerCase())
+
+    return matchesCategory && matchesSearch
+  })
+  const categoryTotals = transactions.reduce<Record<Category, number>>(
+    (totals, transaction) => {
+      totals[transaction.category] += transaction.amount
+      return totals
+    },
+    {
+      Food: 0,
+      Transport: 0,
+      'Data/Bills': 0,
+      Entertainment: 0,
+      Other: 0,
+    },
+  )
 
   function addTransaction(transaction: NewTransaction): boolean {
     const title = transaction.title.trim()
@@ -164,6 +190,35 @@ export function useBudget() {
     )
   }
 
+  function editTransaction(
+    id: string,
+    updated: { title: string; amount: number; category: Category },
+  ): boolean {
+    const title = updated.title.trim()
+    const amount = Number(updated.amount)
+    if (
+      title.length === 0 ||
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      !isCategory(updated.category)
+    ) {
+      return false
+    }
+
+    setTransactions((currentTransactions) =>
+      currentTransactions.map((transaction) =>
+        transaction.id === id
+          ? { ...transaction, title, amount, category: updated.category }
+          : transaction,
+      ),
+    )
+    return true
+  }
+
+  function clearTransactions(): void {
+    setTransactions([])
+  }
+
   function updateBudget(value: number | string): boolean {
     const nextBudgetLimit = Number(value)
     if (!Number.isFinite(nextBudgetLimit) || nextBudgetLimit <= 0) {
@@ -179,8 +234,16 @@ export function useBudget() {
     transactions,
     totalSpent,
     remaining,
+    selectedCategory,
+    setSelectedCategory,
+    searchQuery,
+    setSearchQuery,
+    filteredTransactions,
+    categoryTotals,
     addTransaction,
     deleteTransaction,
+    editTransaction,
+    clearTransactions,
     updateBudget,
   }
 }

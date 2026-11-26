@@ -10,8 +10,16 @@ export default function App() {
     transactions,
     totalSpent,
     remaining,
+    selectedCategory,
+    setSelectedCategory,
+    searchQuery,
+    setSearchQuery,
+    filteredTransactions,
+    categoryTotals,
     addTransaction,
     deleteTransaction,
+    editTransaction,
+    clearTransactions,
     updateBudget,
   } = useBudget()
 
@@ -22,12 +30,20 @@ export default function App() {
         totalSpent={totalSpent}
         remaining={remaining}
         transactionCount={transactions.length}
+        categoryTotals={categoryTotals}
         onUpdateBudget={updateBudget}
       />
       <TransactionForm onAddTransaction={addTransaction} />
       <TransactionList
-        transactions={transactions}
+        filteredTransactions={filteredTransactions}
+        totalTransactionCount={transactions.length}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onEditTransaction={editTransaction}
         onDeleteTransaction={deleteTransaction}
+        onClearTransactions={clearTransactions}
       />
     </main>
   )
